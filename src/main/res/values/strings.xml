@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">AzureSkinSense</string>
+    <string name="company_title_1">Skin</string>
+    <string name="company_title_2">Sense</string>
+    <string name="logo_skin_sense">Logo for SkinSense</string>
+    <string name="medical_profile">Medical Profile</string>
+    <string name="nav_bar_camera_title">Camera</string>
+    <string name="nav_bar_history_title">History</string>
+    <string name="sample_di_big_text">Melanoma</string>
+    <string name="sample_di_prob">0.05</string>
+    <string name="advisement">When taking pictures, be sure to place your hand in a nice lighted surface with your skin ailment clearly exposed.</string>
+    <string name="classification_time">Classification Time:</string>
+    <string name="splash_tab">Pick a tab to select your image</string>
+    <string name="image_from_camera">The image from the camera</string>
+    <string name="click_for_the_camera">Click the button to activate the camera!</string>
+    <string name="send">SEND</string>
+    <string name="hello_blank_fragment">Fill in with functionality later</string>
+</resources>
