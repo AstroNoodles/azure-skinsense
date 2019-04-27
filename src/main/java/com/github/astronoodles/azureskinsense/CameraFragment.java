@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -33,16 +35,21 @@ import com.android.volley.toolbox.BaseHttpStack;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 
 /**
@@ -55,8 +62,8 @@ public class CameraFragment extends Fragment {
     public ProgressBar progressBar;
     public String absoluteFilePath;
 
-    public static final String AZURE_URL = "https://eastus.api.cognitive.microsoft.com" +
-            "/customvision/v3.0/Prediction/7f7706ad-93c8-43cf-b113-2e995143eb35/classify/iterations/Iteration1/image";
+    public static final String AZURE_URL = "https://eastus.api.cognitive.microsoft.com/customvision/v3.0/Prediction/" +
+            "7f7706ad-93c8-43cf-b113-2e995143eb35/classify/iterations/Iteration1/image";
     public static final String PREDICTION_KEY = "216b04cef1d34aa7beeabc9e1f1b4c76";
 
     public CameraFragment() {
@@ -91,7 +98,7 @@ public class CameraFragment extends Fragment {
 //                TODO Use Android Volley to communicate with the keys in azure and understand the JSON response that you get
 //                TODO make a message for the disease and links to treat it
 //                TODO make a toast if there is no disease found
-                // sendToAzure();
+                sendToAzure();
                 Toast.makeText(getActivity(), "Sending to Azure", Toast.LENGTH_LONG).show();
             }
             });
@@ -102,24 +109,45 @@ public class CameraFragment extends Fragment {
 
     private void sendToAzure(){
         RequestQueue queue = Volley.newRequestQueue(getActivity());
-                // BaseHTTPStack
-                JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, AZURE_URL, null, new Response.Listener<JSONObject> () {
-                    @Override
-                    public void onResponse(JSONObject obj){
-                        // TODO get the json array of probabilities out of the array and place them in the top three spots
-                        // TODO the responses get a
-                        progressBar.setVisibility(View.INVISIBLE);
+        Bitmap bitmap = BitmapFactory.decodeFile(absoluteFilePath);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
 
+        // String appendedUrl = String.format("%s?Body=%s", AZURE_URL, absoluteFilePath);
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.POST, AZURE_URL, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                Toast.makeText(getActivity(), "Success!", Toast.LENGTH_LONG).show();
+                try{
+                    JSONArray predictions = response.getJSONArray("Predictions");
+                } catch(JSONException e){
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+                Toast.makeText(getActivity(), "Internet error found. Do you have a connection?", Toast.LENGTH_LONG).show();
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headerMap = new HashMap<>(2);
+                headerMap.put("Prediction-Key", PREDICTION_KEY);
+                headerMap.put("Content-Type", "application/octet-stream");
+                return headerMap;
+            }
 
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> paramMap = new HashMap<>(1);
+                paramMap.put("Body", new String(baos.toByteArray()));
+                return paramMap;
+            }
+        };
 
-                    }
-                }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error){
-                            Toast.makeText(getActivity(), "Cannot connect to the server. Do you have Internet?", Toast.LENGTH_LONG).show();
-                        }
-                });
-                queue.add(req);
+        queue.add(req);
             }
 
     private void dispatchPhoto(){
